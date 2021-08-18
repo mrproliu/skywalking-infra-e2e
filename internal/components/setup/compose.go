@@ -103,7 +103,13 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 
 		ports, _ := Ports(context.Background(), cli, container)
 		for port := range ports {
-			logger.Log.Infof("[print]ports list to %s, protocol: %s, port: %d", service, port.Proto(), port.Int())
+			logger.Log.Infof("[print]ports list to %s, protocol: %s, port: %d, count of bind: %d",
+				service, port.Proto(), port.Int(), len(ports[port]))
+			if len(ports[port]) > 0 {
+				for _, p := range ports[port] {
+					logger.Log.Infof("[print] ---host: %s, port: %s", p.HostIP, p.HostPort)
+				}
+			}
 		}
 
 		for inx := range portList {
