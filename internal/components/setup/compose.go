@@ -105,6 +105,9 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
+				realExpectPort, _ := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("tcp/%d", portList[inx].expectPort)))
+				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, port: %d", service, portList[inx].expectPort, realExpectPort)
+
 				// external check
 				dialer := net.Dialer{}
 				address := net.JoinHostPort(ip, fmt.Sprintf("%d", containerPort.PublicPort))
@@ -378,4 +381,50 @@ func Exec(ctx context.Context, cli client.Client, c *types.Container, cmd []stri
 	}
 
 	return exitCode, nil
+}
+
+func MappedPort(ctx context.Context, cli *client.Client, container *types.Container, port nat.Port) (nat.Port, error) {
+	inspect, err := inspectContainer(ctx, cli, container)
+	if err != nil {
+		return "", err
+	}
+	if inspect.ContainerJSONBase.HostConfig.NetworkMode == "host" {
+		return port, nil
+	}
+	ports, err := Ports(ctx, cli, container)
+	if err != nil {
+		return "", err
+	}
+
+	for k, p := range ports {
+		if k.Port() != port.Port() {
+			continue
+		}
+		if port.Proto() != "" && k.Proto() != port.Proto() {
+			continue
+		}
+		if len(p) == 0 {
+			continue
+		}
+		return nat.NewPort(k.Proto(), p[0].HostPort)
+	}
+
+	return "", fmt.Errorf("port not found")
+}
+
+func Ports(ctx context.Context, cli *client.Client, container *types.Container) (nat.PortMap, error) {
+	inspect, err := inspectContainer(ctx, cli, container)
+	if err != nil {
+		return nil, err
+	}
+	return inspect.NetworkSettings.Ports, nil
+}
+
+func inspectContainer(ctx context.Context, cli *client.Client, container *types.Container) (*types.ContainerJSON, error) {
+	inspect, err := cli.ContainerInspect(ctx, container.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &inspect, nil
 }
