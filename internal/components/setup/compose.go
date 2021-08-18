@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go/wait"
 
@@ -384,17 +386,17 @@ func Exec(ctx context.Context, cli client.Client, c *types.Container, cmd []stri
 	return exitCode, nil
 }
 
-func MappedPort(ctx context.Context, cli *client.Client, container *types.Container, port nat.Port) (nat.Port, string, error) {
+func MappedPort(ctx context.Context, cli *client.Client, container *types.Container, port nat.Port) (nat.Port, container.NetworkMode, error) {
 	inspect, err := inspectContainer(ctx, cli, container)
 	if err != nil {
 		return "", "", err
 	}
 	if inspect.ContainerJSONBase.HostConfig.NetworkMode == "host" {
-		return port, string(inspect.ContainerJSONBase.HostConfig.NetworkMode), nil
+		return port, inspect.ContainerJSONBase.HostConfig.NetworkMode, nil
 	}
 	ports, err := Ports(ctx, cli, container)
 	if err != nil {
-		return "", "", err
+		return "", inspect.ContainerJSONBase.HostConfig.NetworkMode, err
 	}
 
 	for k, p := range ports {
@@ -408,10 +410,10 @@ func MappedPort(ctx context.Context, cli *client.Client, container *types.Contai
 			continue
 		}
 		newPort, err := nat.NewPort(k.Proto(), p[0].HostPort)
-		return newPort, string(inspect.ContainerJSONBase.HostConfig.NetworkMode), err
+		return newPort, inspect.ContainerJSONBase.HostConfig.NetworkMode, err
 	}
 
-	return "", string(inspect.ContainerJSONBase.HostConfig.NetworkMode), fmt.Errorf("port not found")
+	return "", inspect.ContainerJSONBase.HostConfig.NetworkMode, fmt.Errorf("port not found")
 }
 
 func Ports(ctx context.Context, cli *client.Client, container *types.Container) (nat.PortMap, error) {
