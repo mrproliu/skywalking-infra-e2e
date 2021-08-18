@@ -106,7 +106,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 				}
 
 				realExpectPort, _ := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("tcp/%d", portList[inx].expectPort)))
-				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, port: %d", service, portList[inx].expectPort, realExpectPort)
+				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, port: %v", service, portList[inx].expectPort, realExpectPort)
 
 				// external check
 				dialer := net.Dialer{}
