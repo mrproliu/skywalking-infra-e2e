@@ -23,7 +23,7 @@ import (
 	"github.com/apache/skywalking-infra-e2e/internal/config"
 	"github.com/apache/skywalking-infra-e2e/internal/logger"
 
-	"github.com/testcontainers/testcontainers-go"
+	"github.com/mrproliu/testcontainers-go"
 
 	"fmt"
 )

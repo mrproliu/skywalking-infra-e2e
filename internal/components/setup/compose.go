@@ -31,7 +31,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 
 	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/mrproliu/testcontainers-go"
+	"github.com/mrproliu/testcontainers-go/wait"
 
 	"github.com/apache/skywalking-infra-e2e/internal/config"
 	"github.com/apache/skywalking-infra-e2e/internal/constant"
@@ -40,8 +41,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-
-	"github.com/testcontainers/testcontainers-go"
 )
 
 // ComposeSetup sets up environment according to e2e.yaml.
