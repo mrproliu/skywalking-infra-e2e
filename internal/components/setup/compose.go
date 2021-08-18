@@ -218,7 +218,7 @@ func bindWaitPort(e2eConfig *config.E2EConfig, compose *testcontainers.LocalDock
 				expectPort:       exportPort,
 				HostPortStrategy: *wait.NewHostPortStrategy(nat.Port(fmt.Sprintf("%d/tcp", exportPort))).WithStartupTimeout(waitTimeout),
 			}
-			//compose.WithExposedService(service, exportPort, strategy)
+			compose.WithExposedService(service, exportPort, strategy)
 
 			serviceWithPorts[service] = append(serviceWithPorts[service], strategy)
 		}
