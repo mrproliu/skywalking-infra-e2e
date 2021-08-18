@@ -118,16 +118,20 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
-				realExpectPort, netmode, err := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("%d/tcp", portList[inx].expectPort)))
-				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, protocol: %s, port: %s, netmode: %s, error: %v",
-					service, portList[inx].expectPort, realExpectPort.Proto(), realExpectPort.Port(), netmode, err)
+				port, netmode, err := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("%d/tcp", portList[inx].expectPort)))
+				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, protocol: %s, port: %d, netmode: %s, error: %v",
+					service, portList[inx].expectPort, port.Proto(), port.Int(), netmode, err)
+
+				proto := port.Proto()
+				portNumber := port.Int()
+				portString := strconv.Itoa(portNumber)
 
 				// external check
 				dialer := net.Dialer{}
-				address := net.JoinHostPort(ip, fmt.Sprintf("%d", containerPort.PublicPort))
+				address := net.JoinHostPort(ip, portString)
 				for {
 					logger.Log.Infof("[print]trying to connect to %s", address)
-					conn, err := dialer.DialContext(context.Background(), "tcp", address)
+					conn, err := dialer.DialContext(context.Background(), proto, address)
 					if err != nil {
 						logger.Log.Errorf("[print]connect error: %v", err)
 						time.Sleep(time.Second * 2)
@@ -139,7 +143,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 				}
 
 				// internal check
-				command := buildInternalCheckCommand(int(containerPort.PrivatePort))
+				command := buildInternalCheckCommand(nat.Port(fmt.Sprintf("%d/tcp", portList[inx].expectPort)).Int())
 				for {
 					exitCode, err := Exec(context.Background(), *cli, container, []string{"/bin/sh", "-c", command})
 					if err != nil {
@@ -152,7 +156,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 						return fmt.Errorf("/bin/sh command not executable")
 					}
 				}
-				logger.Log.Infof("[print]connect success to internal port: %d", containerPort.PrivatePort)
+				logger.Log.Infof("[print]connect success to internal port: %d", portList[inx].expectPort)
 
 				// expose env config to env
 				// format: <service_name>_<port>
