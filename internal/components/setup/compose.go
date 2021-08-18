@@ -105,8 +105,9 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
-				realExpectPort, _ := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("tcp/%d", portList[inx].expectPort)))
-				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, protocol: %s, port: %s", service, portList[inx].expectPort, realExpectPort.Proto(), realExpectPort.Port())
+				realExpectPort, netmode, err := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("tcp/%d", portList[inx].expectPort)))
+				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, protocol: %s, port: %s, netmode: %s, error: %v",
+					service, portList[inx].expectPort, realExpectPort.Proto(), realExpectPort.Port(), netmode, err)
 
 				// external check
 				dialer := net.Dialer{}
@@ -383,17 +384,17 @@ func Exec(ctx context.Context, cli client.Client, c *types.Container, cmd []stri
 	return exitCode, nil
 }
 
-func MappedPort(ctx context.Context, cli *client.Client, container *types.Container, port nat.Port) (nat.Port, error) {
+func MappedPort(ctx context.Context, cli *client.Client, container *types.Container, port nat.Port) (nat.Port, string, error) {
 	inspect, err := inspectContainer(ctx, cli, container)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if inspect.ContainerJSONBase.HostConfig.NetworkMode == "host" {
-		return port, nil
+		return port, string(inspect.ContainerJSONBase.HostConfig.NetworkMode), nil
 	}
 	ports, err := Ports(ctx, cli, container)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	for k, p := range ports {
@@ -406,10 +407,11 @@ func MappedPort(ctx context.Context, cli *client.Client, container *types.Contai
 		if len(p) == 0 {
 			continue
 		}
-		return nat.NewPort(k.Proto(), p[0].HostPort)
+		newPort, err := nat.NewPort(k.Proto(), p[0].HostPort)
+		return newPort, string(inspect.ContainerJSONBase.HostConfig.NetworkMode), err
 	}
 
-	return "", fmt.Errorf("port not found")
+	return "", string(inspect.ContainerJSONBase.HostConfig.NetworkMode), fmt.Errorf("port not found")
 }
 
 func Ports(ctx context.Context, cli *client.Client, container *types.Container) (nat.PortMap, error) {
