@@ -93,10 +93,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 		containerPorts := container.Ports
 
 		// get real ip address for access and export to env
-		host, err2 := portList[0].target.Host(context.Background())
-		if err2 != nil {
-			return err2
-		}
+		host := ip
 		// format: <service_name>_host
 		if err2 := exportComposeEnv(fmt.Sprintf("%s_host", service), host, service); err2 != nil {
 			return err2
