@@ -21,6 +21,7 @@ package setup
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -107,6 +108,20 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
+				dialer := net.Dialer{}
+				address := net.JoinHostPort(ip, fmt.Sprintf("%d", containerPort.PublicPort))
+				for {
+					logger.Log.Infof("[print]trying to connect to %s", address)
+					conn, err := dialer.DialContext(context.Background(), "tcp", address)
+					if err != nil {
+						logger.Log.Errorf("[print]connect error: %v", err)
+						time.Sleep(time.Second * 2)
+					} else {
+						conn.Close()
+						logger.Log.Infof("[print]connect success to %s", address)
+						break
+					}
+				}
 				// expose env config to env
 				// format: <service_name>_<port>
 				if err2 := exportComposeEnv(
@@ -167,7 +182,7 @@ func bindWaitPort(e2eConfig *config.E2EConfig, compose *testcontainers.LocalDock
 				expectPort:       exportPort,
 				HostPortStrategy: *wait.NewHostPortStrategy(nat.Port(fmt.Sprintf("%d/tcp", exportPort))).WithStartupTimeout(waitTimeout),
 			}
-			compose.WithExposedService(service, exportPort, strategy)
+			//compose.WithExposedService(service, exportPort, strategy)
 
 			serviceWithPorts[service] = append(serviceWithPorts[service], strategy)
 		}
@@ -274,7 +289,7 @@ func getDefaultNetwork(ctx context.Context, cli client.Client) (string, error) {
 		return "", err
 	}
 
-	reaperNetwork := "reaper_default"
+	reaperNetwork := testcontainers.ReaperDefault
 
 	reaperNetworkExists := false
 
