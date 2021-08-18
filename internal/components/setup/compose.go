@@ -105,6 +105,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
+				// external check
 				dialer := net.Dialer{}
 				address := net.JoinHostPort(ip, fmt.Sprintf("%d", containerPort.PublicPort))
 				for {
@@ -119,6 +120,22 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 						break
 					}
 				}
+
+				// internal check
+				command := buildInternalCheckCommand(int(containerPort.PrivatePort))
+				for {
+					exitCode, err := Exec(context.Background(), *cli, container, []string{"/bin/sh", "-c", command})
+					if err != nil {
+						return fmt.Errorf("host port waiting failed: %v", err)
+					}
+
+					if exitCode == 0 {
+						break
+					} else if exitCode == 126 {
+						return fmt.Errorf("/bin/sh command not executable")
+					}
+				}
+
 				// expose env config to env
 				// format: <service_name>_<port>
 				if err2 := exportComposeEnv(
@@ -316,4 +333,48 @@ func getDefaultNetwork(ctx context.Context, cli client.Client) (string, error) {
 	}
 
 	return reaperNetwork, nil
+}
+
+func buildInternalCheckCommand(internalPort int) string {
+	command := `(
+					cat /proc/net/tcp* | awk '{print $2}' | grep -i :%04x ||
+					nc -vz -w 1 localhost %d ||
+					/bin/sh -c '</dev/tcp/localhost/%d'
+				)
+				`
+	return "true && " + fmt.Sprintf(command, internalPort, internalPort, internalPort)
+}
+
+func Exec(ctx context.Context, cli client.Client, c *types.Container, cmd []string) (int, error) {
+	response, err := cli.ContainerExecCreate(ctx, c.ID, types.ExecConfig{
+		Cmd:    cmd,
+		Detach: false,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	err = cli.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
+		Detach: false,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	var exitCode int
+	for {
+		execResp, err := cli.ContainerExecInspect(ctx, response.ID)
+		if err != nil {
+			return 0, err
+		}
+
+		if !execResp.Running {
+			exitCode = execResp.ExitCode
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return exitCode, nil
 }
