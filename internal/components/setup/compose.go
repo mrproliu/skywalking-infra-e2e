@@ -101,6 +101,11 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 			return err2
 		}
 
+		ports, _ := Ports(context.Background(), cli, container)
+		for port := range ports {
+			logger.Log.Infof("[print]ports list to %s, protocol: %s, port: %d", service, port.Proto(), port.Int())
+		}
+
 		for inx := range portList {
 			for _, containerPort := range containerPorts {
 				if int(containerPort.PrivatePort) != portList[inx].expectPort {
