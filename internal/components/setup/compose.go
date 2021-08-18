@@ -118,7 +118,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
-				realExpectPort, netmode, err := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("tcp/%d", portList[inx].expectPort)))
+				realExpectPort, netmode, err := MappedPort(context.Background(), cli, container, nat.Port(fmt.Sprintf("%d/tcp", portList[inx].expectPort)))
 				logger.Log.Infof("[print]find mapped service: %s, expectPort: %d, protocol: %s, port: %s, netmode: %s, error: %v",
 					service, portList[inx].expectPort, realExpectPort.Proto(), realExpectPort.Port(), netmode, err)
 
