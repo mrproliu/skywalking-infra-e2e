@@ -21,6 +21,7 @@ package setup
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -53,6 +54,13 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 	if err != nil {
 		return err
 	}
+
+	logger.Log.Infof("[print]current docker daemon host: %s", cli.DaemonHost())
+	logger.Log.Infof("[print]in a container: %b", inAContainer())
+	network, err := getDefaultNetwork(context.Background(), *cli)
+	logger.Log.Infof("[print]docker default network name: %s", network)
+	ip, err := getGatewayIP(context.Background(), *cli)
+	logger.Log.Infof("[print]gateway ip: %s", ip)
 
 	// setup docker compose
 	composeFilePaths := []string{
@@ -100,6 +108,20 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 					continue
 				}
 
+				dialer := net.Dialer{}
+				address := net.JoinHostPort(ip, fmt.Sprintf("%d", containerPort.PublicPort))
+				for {
+					logger.Log.Infof("[print]trying to connect to %s", address)
+					conn, err := dialer.DialContext(context.Background(), "tcp", address)
+					if err != nil {
+						logger.Log.Errorf("[print]connect error: %v", err)
+						time.Sleep(time.Second * 2)
+					} else {
+						conn.Close()
+						logger.Log.Infof("[print]connect success to %s", address)
+						break
+					}
+				}
 				// expose env config to env
 				// format: <service_name>_<port>
 				if err2 := exportComposeEnv(
@@ -160,7 +182,7 @@ func bindWaitPort(e2eConfig *config.E2EConfig, compose *testcontainers.LocalDock
 				expectPort:       exportPort,
 				HostPortStrategy: *wait.NewHostPortStrategy(nat.Port(fmt.Sprintf("%d/tcp", exportPort))).WithStartupTimeout(waitTimeout),
 			}
-			compose.WithExposedService(service, exportPort, strategy)
+			//compose.WithExposedService(service, exportPort, strategy)
 
 			serviceWithPorts[service] = append(serviceWithPorts[service], strategy)
 		}
@@ -217,4 +239,84 @@ type hostPortCachedStrategy struct {
 func (hp *hostPortCachedStrategy) WaitUntilReady(ctx context.Context, target wait.StrategyTarget) error {
 	hp.target = target
 	return hp.HostPortStrategy.WaitUntilReady(ctx, target)
+}
+
+func inAContainer() bool {
+	// see https://github.com/testcontainers/testcontainers-java/blob/3ad8d80e2484864e554744a4800a81f6b7982168/core/src/main/java/org/testcontainers/dockerclient/DockerClientConfigUtils.java#L15
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return true
+	}
+	return false
+}
+
+func getGatewayIP(ctx context.Context, cli client.Client) (string, error) {
+	// Use a default network as defined in the DockerProvider
+	network, err := getDefaultNetwork(ctx, cli)
+	nw, err := GetNetwork(ctx, cli, network)
+	if err != nil {
+		return "", err
+	}
+
+	var ip string
+	for _, config := range nw.IPAM.Config {
+		if config.Gateway != "" {
+			ip = config.Gateway
+			break
+		}
+	}
+	if ip == "" {
+		return "", fmt.Errorf("Failed to get gateway IP from network settings")
+	}
+
+	return ip, nil
+}
+
+func GetNetwork(ctx context.Context, cli client.Client, name string) (types.NetworkResource, error) {
+	networkResource, err := cli.NetworkInspect(ctx, name, types.NetworkInspectOptions{
+		Verbose: true,
+	})
+	if err != nil {
+		return types.NetworkResource{}, err
+	}
+
+	return networkResource, err
+}
+
+func getDefaultNetwork(ctx context.Context, cli client.Client) (string, error) {
+	// Get list of available networks
+	networkResources, err := cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	reaperNetwork := testcontainers.ReaperDefault
+
+	reaperNetworkExists := false
+
+	for _, net := range networkResources {
+		if net.Name == "bridge" {
+			return "bridge", nil
+		}
+
+		if net.Name == reaperNetwork {
+			reaperNetworkExists = true
+		}
+	}
+
+	// Create a bridge network for the container communications
+	if !reaperNetworkExists {
+		_, err = cli.NetworkCreate(ctx, reaperNetwork, types.NetworkCreate{
+			Driver:     "bridge",
+			Attachable: true,
+			Labels: map[string]string{
+				"org.testcontainers.golang": "true",
+			},
+		})
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return reaperNetwork, nil
 }
