@@ -135,6 +135,7 @@ func ComposeSetup(e2eConfig *config.E2EConfig) error {
 						return fmt.Errorf("/bin/sh command not executable")
 					}
 				}
+				logger.Log.Infof("[print]connect success to internal port: %d", containerPort.PrivatePort)
 
 				// expose env config to env
 				// format: <service_name>_<port>
