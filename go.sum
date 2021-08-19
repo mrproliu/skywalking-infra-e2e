@@ -504,6 +504,8 @@ github.com/mrproliu/testcontainers-go v0.11.2-0.20210819022146-85392949542f h1:b
 github.com/mrproliu/testcontainers-go v0.11.2-0.20210819022146-85392949542f/go.mod h1:gPUIobgG5tzTbxJBfS9qW46Q1lgTj3nGVzjR94aQYZk=
 github.com/mrproliu/testcontainers-go v0.11.2-0.20210819032004-7d53ab9f9225 h1:uU3OgofY5BIZX9kqKB76IqLquPYGufeIUVwj5eQ4Jc4=
 github.com/mrproliu/testcontainers-go v0.11.2-0.20210819032004-7d53ab9f9225/go.mod h1:gPUIobgG5tzTbxJBfS9qW46Q1lgTj3nGVzjR94aQYZk=
+github.com/mrproliu/testcontainers-go v0.11.2-0.20210819033608-32f964189b1b h1:mRsKU3mSHq9UkkTA/FllE7SSfO8rw+EDNq0dgguRRfM=
+github.com/mrproliu/testcontainers-go v0.11.2-0.20210819033608-32f964189b1b/go.mod h1:gPUIobgG5tzTbxJBfS9qW46Q1lgTj3nGVzjR94aQYZk=
 github.com/mrunalp/fileutils v0.5.0/go.mod h1:M1WthSahJixYnrXQl/DFQuteStB1weuxD2QJNHXfbSQ=
 github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=

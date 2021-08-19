@@ -20,6 +20,7 @@ package setup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -287,7 +288,10 @@ func inAContainer() bool {
 func getGatewayIP(ctx context.Context, cli client.Client) (string, error) {
 	// Use a default network as defined in the DockerProvider
 	network, err := getDefaultNetwork(ctx, cli)
+	logger.Log.Infof("[print] get default network response: %s, err: %v", network, err)
 	nw, err := GetNetwork(ctx, cli, network)
+	marshal, _ := json.Marshal(nw)
+	logger.Log.Infof("[print] get network response: %v, err: %v", string(marshal), err)
 	if err != nil {
 		return "", err
 	}
