@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.5.4
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/mrproliu/testcontainers-go v0.11.2-0.20210819022146-85392949542f
+	github.com/mrproliu/testcontainers-go v0.11.2-0.20210819032004-7d53ab9f9225
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.1
 	gopkg.in/yaml.v2 v2.4.0
