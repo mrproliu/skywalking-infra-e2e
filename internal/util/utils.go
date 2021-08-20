@@ -118,6 +118,7 @@ func exportEnvVars() {
 		}
 		key, val := kv[0], kv[1]
 		// should only export env vars that are not already exist in parent process (Go process)
+		logger.Log.Infof("setting to env: key: %s, value: %s", key, val)
 		if err := os.Setenv(key, val); err != nil {
 			logger.Log.Warnf("failed to export environment variable %v=%v, %v", key, val, err)
 		}
