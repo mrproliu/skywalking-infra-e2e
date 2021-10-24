@@ -151,7 +151,7 @@ func KindCleanNotify() {
 func createKindCluster(kindConfigPath string) error {
 	// the config file name of the k8s cluster that kind create
 	kubeConfigPath = constant.K8sClusterConfigFilePath
-	args := []string{"create", "cluster", "--config", kindConfigPath /*, "--kubeconfig", kubeConfigPath*/}
+	args := []string{"create", "cluster", "--config", kindConfigPath, "--kubeconfig", kubeConfigPath}
 
 	logger.Log.Info("creating kind cluster...")
 	logger.Log.Debugf("cluster create commands: %s %s", constant.KindCommand, strings.Join(args, " "))
@@ -160,12 +160,19 @@ func createKindCluster(kindConfigPath string) error {
 	}
 	logger.Log.Info("create kind cluster succeeded")
 
+	logger.Log.Infof("start print env:")
+	logger.Log.Infof("--------------------------------")
+	for _, env := range os.Environ() {
+		logger.Log.Infof("env: %s", env)
+	}
+	logger.Log.Infof("--------------------------------")
+
 	// export kubeconfig path for command line
-	//err := os.Setenv("KUBECONFIG", kubeConfigPath)
-	//if err != nil {
-	//	return fmt.Errorf("could not export kubeconfig file path, %v", err)
-	//}
-	//logger.Log.Infof("export KUBECONFIG=%s", kubeConfigPath)
+	err := os.Setenv("KUBECONFIG", kubeConfigPath)
+	if err != nil {
+		return fmt.Errorf("could not export kubeconfig file path, %v", err)
+	}
+	logger.Log.Infof("export KUBECONFIG=%s", kubeConfigPath)
 	return nil
 }
 
