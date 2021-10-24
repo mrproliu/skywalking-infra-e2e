@@ -150,7 +150,7 @@ func KindCleanNotify() {
 
 func createKindCluster(kindConfigPath string) error {
 	// the config file name of the k8s cluster that kind create
-	kubeConfigPath = constant.K8sClusterConfigFilePath
+	kubeConfigPath = "~/.kube/config"
 	args := []string{"create", "cluster", "--config", kindConfigPath /*, "--kubeconfig", kubeConfigPath*/}
 
 	logger.Log.Info("creating kind cluster...")
