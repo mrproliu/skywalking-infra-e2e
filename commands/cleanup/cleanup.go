@@ -20,9 +20,10 @@ package cleanup
 import (
 	"fmt"
 
-	"github.com/apache/skywalking-infra-e2e/internal/config"
-
 	"github.com/apache/skywalking-infra-e2e/internal/components/cleanup"
+	"github.com/apache/skywalking-infra-e2e/internal/components/setup"
+	"github.com/apache/skywalking-infra-e2e/internal/config"
+	"github.com/apache/skywalking-infra-e2e/internal/logger"
 
 	"github.com/spf13/cobra"
 
@@ -44,6 +45,14 @@ var Cleanup = &cobra.Command{
 
 func DoCleanupAccordingE2E() error {
 	e2eConfig := config.GlobalConfig.E2EConfig
+
+	if len(e2eConfig.Cleanup.Steps) > 0 {
+		err := setup.RunStepsAndWait(e2eConfig.Cleanup.Steps, e2eConfig.Setup.Timeout, nil)
+		if err != nil {
+			logger.Log.Errorf("execute cleanup steps error: %v", err)
+			return err
+		}
+	}
 
 	if e2eConfig.Setup.Env == constant.Kind {
 		err := cleanup.KindCleanUp(&e2eConfig)

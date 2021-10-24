@@ -38,7 +38,8 @@ type Setup struct {
 }
 
 type Cleanup struct {
-	On string `yaml:"on"`
+	On    string `yaml:"on"`
+	Steps []Step `yaml:"steps"`
 }
 
 type Step struct {
