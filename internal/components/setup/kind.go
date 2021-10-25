@@ -155,20 +155,26 @@ func createKindCluster(kindConfigPath string) error {
 
 	logger.Log.Info("creating kind cluster...")
 	logger.Log.Debugf("cluster create commands: %s %s", constant.KindCommand, strings.Join(args, " "))
-	if err := kind.Run(kindcmd.NewLogger(), kindcmd.StandardIOStreams(), args); err != nil {
-		return err
+	_, stderr, err := util.ExecuteCommand("which kind")
+	if stderr != "" || err != nil {
+		logger.Log.Infof("execute in internal kind version")
+		if err := kind.Run(kindcmd.NewLogger(), kindcmd.StandardIOStreams(), args); err != nil {
+			return err
+		}
+	} else {
+		logger.Log.Infof("execute in command kind version")
+		result, errStr, err := util.ExecuteCommand(fmt.Sprintf("kind create cluster --config %s --kubeconfig %s", kindConfigPath, kubeConfigPath))
+		if err != nil {
+			return err
+		}
+		logger.Log.Info("execute command kind success:")
+		logger.Log.Infof("success: %s\n----------------------------\nerror: %s\n", result, errStr)
 	}
+
 	logger.Log.Info("create kind cluster succeeded")
 
-	logger.Log.Infof("start print env:")
-	logger.Log.Infof("--------------------------------")
-	for _, env := range os.Environ() {
-		logger.Log.Infof("env: %s", env)
-	}
-	logger.Log.Infof("--------------------------------")
-
 	// export kubeconfig path for command line
-	err := os.Setenv("KUBECONFIG", kubeConfigPath)
+	err = os.Setenv("KUBECONFIG", kubeConfigPath)
 	if err != nil {
 		return fmt.Errorf("could not export kubeconfig file path, %v", err)
 	}
