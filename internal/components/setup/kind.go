@@ -140,13 +140,17 @@ func KindShouldWaitSignal() bool {
 
 // KindCleanNotify notify when clean up
 func KindCleanNotify() {
-	//if portForwardContext != nil {
-	//	portForwardContext.stopChannel <- struct{}{}
-	//	// wait all stopped
-	//	for i := 0; i < portForwardContext.resourceCount; i++ {
-	//		<-portForwardContext.resourceFinishedChannel
-	//	}
-	//}
+	if portForwardContext != nil {
+		close(portForwardContext.stopChannel)
+		// wait all stopped
+		for i := 0; i < portForwardContext.resourceCount; i++ {
+			// add timeout prevent port already close
+			select {
+			case <-portForwardContext.resourceFinishedChannel:
+			case <-time.After(time.Second * 2):
+			}
+		}
+	}
 }
 
 func createKindCluster(kindConfigPath string) error {
