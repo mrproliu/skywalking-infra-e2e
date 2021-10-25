@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -139,42 +140,45 @@ func KindShouldWaitSignal() bool {
 
 // KindCleanNotify notify when clean up
 func KindCleanNotify() {
-	if portForwardContext != nil {
-		portForwardContext.stopChannel <- struct{}{}
-		// wait all stopped
-		for i := 0; i < portForwardContext.resourceCount; i++ {
-			<-portForwardContext.resourceFinishedChannel
-		}
-	}
+	//if portForwardContext != nil {
+	//	portForwardContext.stopChannel <- struct{}{}
+	//	// wait all stopped
+	//	for i := 0; i < portForwardContext.resourceCount; i++ {
+	//		<-portForwardContext.resourceFinishedChannel
+	//	}
+	//}
 }
 
 func createKindCluster(kindConfigPath string) error {
 	// the config file name of the k8s cluster that kind create
 	kubeConfigPath = constant.K8sClusterConfigFilePath
-	args := []string{"create", "cluster", "--config", kindConfigPath, "--kubeconfig", kubeConfigPath}
 
 	logger.Log.Info("creating kind cluster...")
-	logger.Log.Debugf("cluster create commands: %s %s", constant.KindCommand, strings.Join(args, " "))
-	_, stderr, err := util.ExecuteCommand("which kind")
-	if stderr != "" || err != nil {
-		logger.Log.Infof("execute in internal kind version")
+	_, findKindErr := exec.LookPath("kind")
+	args := []string{"create", "cluster", "--config", kindConfigPath, "--kubeconfig", kubeConfigPath}
+	if findKindErr != nil {
+		logger.Log.Debugf("internal kind cluster create commands: %s %s", constant.KindCommand, strings.Join(args, " "))
 		if err := kind.Run(kindcmd.NewLogger(), kindcmd.StandardIOStreams(), args); err != nil {
 			return err
 		}
 	} else {
-		logger.Log.Infof("execute in command kind version")
-		result, errStr, err := util.ExecuteCommand(fmt.Sprintf("kind create cluster --config %s --kubeconfig %s", kindConfigPath, kubeConfigPath))
-		if err != nil {
+		logger.Log.Debugf("command kind cluster create commands: %s %s", constant.KindCommand, strings.Join(args, " "))
+		command := exec.Command("kind", args...)
+		command.Stdout = kindcmd.StandardIOStreams().Out
+		command.Stderr = kindcmd.StandardIOStreams().ErrOut
+
+		if err := command.Start(); err != nil {
 			return err
 		}
-		logger.Log.Info("execute command kind success:")
-		logger.Log.Infof("success: %s\n----------------------------\nerror: %s\n", result, errStr)
+		if err := command.Wait(); err != nil {
+			return err
+		}
 	}
 
 	logger.Log.Info("create kind cluster succeeded")
 
 	// export kubeconfig path for command line
-	err = os.Setenv("KUBECONFIG", kubeConfigPath)
+	err := os.Setenv("KUBECONFIG", kubeConfigPath)
 	if err != nil {
 		return fmt.Errorf("could not export kubeconfig file path, %v", err)
 	}
