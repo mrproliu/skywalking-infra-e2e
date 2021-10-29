@@ -32,11 +32,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - shell: bash
-      run: |
-        make -C $GITHUB_ACTION_PATH docker
-        docker run -v $(pwd):/tmp -w /tmp --entrypoint=sh docker.io/apache/e2e:latest -c "cp /usr/local/bin/e2e /tmp/e2e"
-        install ./e2e /usr/local/bin
     - name: E2E Dir Generator
       shell: bash
       run: |
@@ -54,9 +49,6 @@ runs:
         fi
         echo "::set-output name=log::$LOG_DIR"
     - shell: bash
-      run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ steps.e2e_dir_generate.outputs.work }}"
-    - name: Upload Work Directory
-      uses: actions/upload-artifact@v2
-      with:
-        name: skywalking-infra-e2e
-        path: ${{ runner.temp }}/skywalking-infra-e2e/${{ inputs.log-dir }}
+      run: |
+        echo "work dir: ${{ steps.e2e_dir_generate.outputs.work  }}"
+        echo "log dir: ${{ steps.e2e_dir_generate.outputs.log  }}"
