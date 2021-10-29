@@ -53,20 +53,6 @@ runs:
           LOG_DIR="${{ inputs.log-dir }}"
         fi
         echo "::set-output name=log::$LOG_DIR"
-
-    - name: E2E Log Dir Generator
-      shell: bash
-      run: |
-        LOG_DIR=""
-        if [[ "${{ inputs.log-dir }}" == "" ]]; then
-          combine_matrix=$(echo '${{ toJSON(matrix) }}'|jq -r 'to_entries|map(.value)|join("_")')
-          combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
-          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ github.job }}_$combine_matrix"
-        elseif [[ "${{ inputs.log-dir }}" == /* ]]; then
-          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ inputs.log-dir }}"
-        else
-          LOG_DIR="${{ inputs.log-dir }}"
-        fi
     - shell: bash
       run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ steps.e2e_dir_generate.outputs.work }}"
     - name: Upload Work Directory
