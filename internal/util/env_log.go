@@ -106,7 +106,8 @@ func (l *ResourceLogFollower) Close() {
 }
 
 func (l *ResourceLogFollower) buildLogFilename(path string) string {
-	return filepath.Join(l.basePath, LogBase, path)
+	logDir := os.Getenv("LOG_DIR")
+	return filepath.Join(l.basePath, logDir, LogBase, path)
 }
 
 func (l *ResourceLogFollower) writeFollowed(writer *os.File) {

@@ -21,6 +21,13 @@ inputs:
   e2e-file:
     description: File path of e2e file
     required: true
+  save-logs:
+    description: Upload the container logs into the Artifact
+    required: false
+    default: "false"
+  log-dir:
+    description: The container logs directory
+    required: false
 
 runs:
   using: "composite"
@@ -31,9 +38,12 @@ runs:
         docker run -v $(pwd):/tmp -w /tmp --entrypoint=sh docker.io/apache/e2e:latest -c "cp /usr/local/bin/e2e /tmp/e2e"
         install ./e2e /usr/local/bin
     - shell: bash
+      env:
+        LOG_DIR: ${{ inputs.log-dir }}
       run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ runner.temp }}/skywalking-infra-e2e"
     - name: Upload Work Directory
+      if: "${{ inputs.save-logs }}" == "true"
       uses: actions/upload-artifact@v2
       with:
         name: skywalking-infra-e2e
-        path: ${{ runner.temp }}/skywalking-infra-e2e
+        path: ${{ runner.temp }}/skywalking-infra-e2e/${{ inputs.log-dir }}
