@@ -37,27 +37,38 @@ runs:
         make -C $GITHUB_ACTION_PATH docker
         docker run -v $(pwd):/tmp -w /tmp --entrypoint=sh docker.io/apache/e2e:latest -c "cp /usr/local/bin/e2e /tmp/e2e"
         install ./e2e /usr/local/bin
-    - name: Print context from Infra E2E
+    - name: E2E Dir Generator
       shell: bash
       run: |
-        echo "github: ${{ toJSON(github) }}"
-        echo "job: ${{ toJSON(job) }}"
-        echo "matrix: ${{ toJSON(matrix) }}"
-    - name: Default Log Dir
+        echo "::set-output name=work::${{ runner.temp }}/skywalking-infra-e2e"
+
+        LOG_DIR=""
+        if [[ "${{ inputs.log-dir }}" == "" ]]; then
+          combine_matrix=$(echo '${{ toJSON(matrix) }}'|jq -r 'to_entries|map(.value)|join("_")')
+          combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
+          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ github.job }}_$combine_matrix"
+        elseif [[ "${{ inputs.log-dir }}" == /* ]]; then
+          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ inputs.log-dir }}"
+        else
+          LOG_DIR="${{ inputs.log-dir }}"
+        fi
+        echo "::set-output name=log::$LOG_DIR"
+
+    - name: E2E Log Dir Generator
       shell: bash
       run: |
         LOG_DIR=""
         if [[ "${{ inputs.log-dir }}" == "" ]]; then
           combine_matrix=$(echo '${{ toJSON(matrix) }}'|jq -r 'to_entries|map(.value)|join("_")')
-          LOG_DIR="${{ github.job }}_$combine_matrix"
+          combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
+          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ github.job }}_$combine_matrix"
+        elseif [[ "${{ inputs.log-dir }}" == /* ]]; then
+          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ inputs.log-dir }}"
         else
           LOG_DIR="${{ inputs.log-dir }}"
-        done
-
-        echo "The log dir is: $LOG_DIR"
-        export "LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
+        fi
     - shell: bash
-      run: e2e run -c "${{ inputs.e2e-file }}"
+      run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ steps.e2e_dir_generate.outputs.work }}"
     - name: Upload Work Directory
       uses: actions/upload-artifact@v2
       with:
