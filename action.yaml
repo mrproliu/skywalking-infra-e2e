@@ -21,10 +21,6 @@ inputs:
   e2e-file:
     description: File path of e2e file
     required: true
-  save-logs:
-    description: Upload the container logs into the Artifact
-    required: false
-    default: "false"
   log-dir:
     description: The container logs directory
     required: false
@@ -41,7 +37,7 @@ runs:
       id: 'e2e-dir-generator'
       shell: bash
       run: |
-        WORK_DIR="${{ runner.temp }}/skywalking-infra-e2e"
+        WORK_DIR="$(pwd)/skywalking-infra-e2e"
         echo "::set-output name=work::$WORK_DIR"
 
         LOG_DIR=""
