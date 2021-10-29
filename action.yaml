@@ -37,6 +37,12 @@ runs:
         make -C $GITHUB_ACTION_PATH docker
         docker run -v $(pwd):/tmp -w /tmp --entrypoint=sh docker.io/apache/e2e:latest -c "cp /usr/local/bin/e2e /tmp/e2e"
         install ./e2e /usr/local/bin
+    - name: Print context from Infra E2E
+      shell: bash
+      run: |
+        echo "github: ${{ toJSON(github) }}"
+        echo "job: ${{ toJSON(job) }}"
+        echo "matrix: ${{ toJSON(matrix) }}"
     - name: Default Log Dir
       shell: bash
       run: |
@@ -51,9 +57,8 @@ runs:
         echo "The log dir is: $LOG_DIR"
         export "LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
     - shell: bash
-      run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ runner.temp }}/skywalking-infra-e2e"
+      run: e2e run -c "${{ inputs.e2e-file }}"
     - name: Upload Work Directory
-      if: "${{ inputs.save-logs }}" == "true"
       uses: actions/upload-artifact@v2
       with:
         name: skywalking-infra-e2e
