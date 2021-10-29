@@ -41,7 +41,7 @@ runs:
         LOG_DIR=""
         if [[ "${{ inputs.log-dir }}" == "" ]]
         then
-          matrix="${{ toJSON(matrix) }}"
+          matrix='${{ toJSON(matrix) }}'
           combine_matrix=$(echo $matrix|jq -r 'to_entries|map(.value)|join("_")')
           combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
           LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ github.job }}_$combine_matrix"
