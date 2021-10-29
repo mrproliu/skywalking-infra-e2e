@@ -37,9 +37,20 @@ runs:
         make -C $GITHUB_ACTION_PATH docker
         docker run -v $(pwd):/tmp -w /tmp --entrypoint=sh docker.io/apache/e2e:latest -c "cp /usr/local/bin/e2e /tmp/e2e"
         install ./e2e /usr/local/bin
+    - name: Default Log Dir
+      shell: bash
+      run: |
+        LOG_DIR=""
+        if [[ "${{ inputs.log-dir }}" == "" ]]; then
+          combine_matrix=$(echo '${{ toJSON(matrix) }}'|jq -r 'to_entries|map(.value)|join("_")')
+          LOG_DIR="${{ github.job }}_$combine_matrix"
+        else
+          LOG_DIR="${{ inputs.log-dir }}"
+        done
+
+        echo "The log dir is: $LOG_DIR"
+        export "LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
     - shell: bash
-      env:
-        LOG_DIR: ${{ inputs.log-dir }}
       run: e2e run -c "${{ inputs.e2e-file }}" -w "${{ runner.temp }}/skywalking-infra-e2e"
     - name: Upload Work Directory
       if: "${{ inputs.save-logs }}" == "true"
