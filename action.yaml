@@ -37,7 +37,7 @@ runs:
       id: 'e2e-dir-generator'
       shell: bash
       run: |
-        WORK_DIR="$(pwd)/skywalking-infra-e2e"
+        WORK_DIR="${{ runner.temp }}/skywalking-infra-e2e"
         echo "::set-output name=work::$WORK_DIR"
 
         LOG_DIR=""
@@ -73,5 +73,5 @@ runs:
       run: |
         e2e run \
           -c "${{ inputs.e2e-file }}" \
-          -w "${{ steps.e2e-dir-generator.outputs.work }}"
+          -w "${{ steps.e2e-dir-generator.outputs.work }}" \
           -l "${{ steps.e2e-dir-generator.outputs.log-case }}"
