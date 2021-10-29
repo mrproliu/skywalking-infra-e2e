@@ -69,6 +69,7 @@ runs:
         fi
         echo "::set-output name=log::$LOG_DIR"
         echo "::set-output name=log-case::$LOG_JOB_DIR"
+        echo "SW_INFRA_E2E_LOG_DIR=$LOG_DIR" >> $GITHUB_ENV
     - shell: bash
       run: |
         e2e run \
