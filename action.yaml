@@ -61,14 +61,14 @@ runs:
           fi
         elif [[ "${{ inputs.log-dir }}" == /* ]]
         then
-          LOG_DIR="$WORK_DIR/${{ inputs.log-dir }}"
-          LOG_CASE_DIR="$WORK_DIR/${{ inputs.log-dir }}"
-        else
           LOG_DIR="${{ inputs.log-dir }}"
-          LOG_CASE_DIR="${{ inputs.log-dir }}"
+          LOG_JOB_DIR="${{ inputs.log-dir }}"
+        else
+          LOG_DIR="$WORK_DIR/${{ inputs.log-dir }}"
+          LOG_JOB_DIR="$WORK_DIR/${{ inputs.log-dir }}"
         fi
         echo "::set-output name=log::$LOG_DIR"
-        echo "::set-output name=log-case::$LOG_CASE_DIR"
+        echo "::set-output name=log-case::$LOG_JOB_DIR"
     - shell: bash
       run: |
         e2e run \
