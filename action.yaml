@@ -33,6 +33,7 @@ runs:
   using: "composite"
   steps:
     - name: E2E Dir Generator
+      id: 'e2e-dir-generator'
       shell: bash
       run: |
         WORK_DIR="${{ runner.temp }}/skywalking-infra-e2e"
@@ -42,9 +43,14 @@ runs:
         if [[ "${{ inputs.log-dir }}" == "" ]]
         then
           matrix='${{ toJSON(matrix) }}'
-          combine_matrix=$(echo $matrix|jq -r 'to_entries|map(.value)|join("_")')
-          combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
-          LOG_DIR="${{ steps.e2e_work_dir_generate.outputs.* }}/${{ github.job }}_$combine_matrix"
+          if [[ "$matrix" == "null" ]]
+          then
+            LOG_DIR="$WORK_DIR/${{ github.job }}"
+          else
+            combine_matrix=$(echo $matrix|jq -r 'to_entries|map(.value)|join("_")')
+            combine_matrix=`echo $combine_matrix|sed -e 's/[^A-Za-z0-9._-]/_/g'`
+            LOG_DIR="$WORK_DIR/${{ github.job }}_$combine_matrix"
+          fi
         elif [[ "${{ inputs.log-dir }}" == /* ]]
         then
           LOG_DIR="$WORK_DIR/${{ inputs.log-dir }}"
@@ -54,5 +60,5 @@ runs:
         echo "::set-output name=log::$LOG_DIR"
     - shell: bash
       run: |
-        echo "work dir: ${{ steps.e2e_dir_generate.outputs.work  }}"
-        echo "log dir: ${{ steps.e2e_dir_generate.outputs.log  }}"
+        echo "work dir: ${{ steps.e2e-dir-generator.outputs.work  }}"
+        echo "log dir: ${{ steps.e2e-dir-generator.outputs.log  }}"
