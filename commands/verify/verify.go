@@ -59,7 +59,7 @@ var Verify = &cobra.Command{
 func verifySingleCase(expectedFile, actualFile, query string) error {
 	expectedData, err := util.ReadFileContent(expectedFile)
 	if err != nil {
-		return fmt.Errorf("failed to read the expected data file: %v", err)
+		return fmt.Errorf("failed to read the expected data file: path: %s, %v", expectedFile, err)
 	}
 
 	var actualData, sourceName, stderr string
