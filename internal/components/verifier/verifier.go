@@ -47,7 +47,7 @@ func (e *MismatchError) Error() string {
 func Verify(actualData, expectedTemplate string) error {
 	var actual any
 	if err := yaml.Unmarshal([]byte(actualData), &actual); err != nil {
-		return fmt.Errorf("failed to unmarshal actual data: %v", err)
+		return fmt.Errorf("failed to unmarshal actual data: %v, \nreal data: %s", err, actualData)
 	}
 
 	tmpl, err := template.New("test").Funcs(funcMap()).Parse(expectedTemplate)
